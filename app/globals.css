@@ -6,10 +6,18 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
+  /* --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-mono); */
+  --color-obsidian: #0A0A0A;
+  --color-storm: #1A1C1E;
+  --color-bone: #F5F5F7;
+  --color-accent-gold: #E2D1A4;
+  --color-smoke: #4A4A4A;
+
+  /* You can also define your specific font for the "MainText" here */
+  --font-serif: "Merriweather", serif;
 }
 
 @media (prefers-color-scheme: dark) {
