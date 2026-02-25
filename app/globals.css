@@ -32,3 +32,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.custom-spotlight-card {
+  /* Prevents the 'shimmer' and blur during 3D movement */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  image-rendering: -webkit-optimize-contrast;
+  /* Forces a new stacking context to keep things sharp */
+  isolation: isolate;
+}
+
+/* Force the image inside to stay sharp */
+.custom-spotlight-card img {
+  transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+}
