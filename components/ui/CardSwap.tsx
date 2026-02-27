@@ -7,17 +7,13 @@ import React, {
   isValidElement,
   ReactElement,
   ReactNode,
-  RefObject,
   useEffect,
   useMemo,
   useRef,
 } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import RotatingText from "./RotatingText";
-import { Boxes } from "./Boxes";
-
-// --- Interfaces ---
+import { gridState } from "./GridCanvas";
 
 export interface ProjectData {
   title: string;
@@ -39,22 +35,18 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   customClass?: string;
 }
 
-// --- Components ---
-
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ customClass, ...rest }, ref) => (
     <div
       ref={ref}
       {...rest}
       className={`absolute top-1/2 left-1/2 rounded-xl border border-[#314158]/50 bg-[#0f172b]
-        [transform-style:preserve-3d] [will-change:transform,opacity] [backface-visibility:hidden] 
+        [transform-style:preserve-3d] [will-change:transform,opacity] [backface-visibility:hidden]
         [-webkit-font-smoothing:antialiased] shadow-2xl ${customClass ?? ""} ${rest.className ?? ""}`.trim()}
     />
   ),
 );
 Card.displayName = "Card";
-
-// --- Helpers ---
 
 interface Slot {
   x: number;
@@ -88,8 +80,6 @@ const placeNow = (el: HTMLElement, slot: Slot, skew: number) =>
     force3D: true,
   });
 
-// --- Main Component ---
-
 const CardSwap: React.FC<CardSwapProps> = ({
   projects,
   width = 1000,
@@ -117,8 +107,10 @@ const CardSwap: React.FC<CardSwapProps> = ({
     const total = refs.length;
     if (total === 0) return;
 
+    // Reset grid to skewed state when this section mounts
+    gridState.flattenProgress = 0;
+
     const ctx = gsap.context(() => {
-      // 1. Initial State: Cards
       refs.forEach((r, i) =>
         placeNow(
           r.current!,
@@ -126,8 +118,6 @@ const CardSwap: React.FC<CardSwapProps> = ({
           skewAmount,
         ),
       );
-
-      // 2. Initial State: Text (Hide everything except the first one)
       gsap.set(textRefs.current.slice(1), {
         opacity: 0,
         y: 40,
@@ -135,51 +125,49 @@ const CardSwap: React.FC<CardSwapProps> = ({
         pointerEvents: "none",
       });
 
-      // 3. Create Timeline
+      const totalSteps = total + 1;
+
       const masterTl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top top",
-          end: `+=${total * 1200}`, // Total scroll distance
+          end: `+=${totalSteps * 1200}`,
           pin: true,
           scrub: 1,
-          snap: 1 / total,
+          snap: 1 / totalSteps,
+          onRefresh: () => {
+            // GSAP wraps the pinned element in a .pin-spacer div which
+            // captures pointer events across the entire scroll distance.
+            // Disable it so clicks reach the canvas underneath.
+            const spacer = sectionRef.current?.parentElement;
+            if (spacer?.classList.contains("pin-spacer")) {
+              (spacer as HTMLElement).style.pointerEvents = "none";
+            }
+          },
         },
       });
 
+      // --- Card cycle ---
       for (let step = 0; step < total; step++) {
         const label = `step${step}`;
         masterTl.addLabel(label);
 
-        const elFront = refs[step % total].current!;
-        const currentText = textRefs.current[step % total];
+        const elFront = refs[step].current!;
+        const currentText = textRefs.current[step];
         const nextText = textRefs.current[(step + 1) % total];
 
-        // A. Drop Current Card
         masterTl.to(
           elFront,
-          {
-            y: "+=600",
-            opacity: 0,
-            duration: 1,
-            ease: "power2.in",
-          },
+          { y: "+=600", opacity: 0, duration: 1, ease: "power2.in" },
           label,
         );
 
-        // B. Animate Text Reveal
         if (currentText && nextText && step < total - 1) {
           masterTl.to(
             currentText,
-            {
-              opacity: 0,
-              y: -40,
-              filter: "blur(10px)",
-              duration: 0.6,
-            },
+            { opacity: 0, y: -40, filter: "blur(10px)", duration: 0.6 },
             label,
           );
-
           masterTl.to(
             nextText,
             {
@@ -193,19 +181,16 @@ const CardSwap: React.FC<CardSwapProps> = ({
           );
         }
 
-        // C. Advance the Stack
         refs.forEach((ref, index) => {
           const el = ref.current!;
           if (el === elFront) return;
-
-          let virtualIndex = (index - (step + 1) + total) % total;
+          const virtualIndex = (index - (step + 1) + total) % total;
           const slot = makeSlot(
             virtualIndex,
             cardDistance,
             verticalDistance,
             total,
           );
-
           masterTl.to(
             el,
             {
@@ -219,29 +204,47 @@ const CardSwap: React.FC<CardSwapProps> = ({
             label,
           );
         });
+      }
 
-        // D. Send Dropped Card to Back
-        const lastSlot = makeSlot(
-          total - 1,
-          cardDistance,
-          verticalDistance,
-          total,
-        );
-        masterTl.set(elFront, { zIndex: 0 }, `${label}+=1`);
+      // --- Flatten phase ---
+      masterTl.addLabel("flatten");
+
+      // Dismiss all remaining cards
+      refs.forEach((ref) => {
         masterTl.to(
-          elFront,
-          {
-            x: lastSlot.x,
-            y: lastSlot.y,
-            z: lastSlot.z,
-            opacity: 1,
-            duration: 1,
-            ease: "power2.out",
-          },
-          `${label}+=1`,
+          ref.current!,
+          { opacity: 0, y: "+=400", duration: 1.5, ease: "power2.in" },
+          "flatten",
+        );
+      });
+
+      // Fade last text
+      const lastText = textRefs.current[total - 1];
+      if (lastText) {
+        masterTl.to(
+          lastText,
+          { opacity: 0, y: -40, filter: "blur(10px)", duration: 1 },
+          "flatten",
         );
       }
-    });
+
+      // Drive gridState.flattenProgress from 0 → 1.
+      // GridCanvas reads this each frame to compute skew/scale.
+      // Using a proxy object so GSAP can tween a plain number.
+      const proxy = { value: 0 };
+      masterTl.to(
+        proxy,
+        {
+          value: 1,
+          duration: 2,
+          ease: "power2.inOut",
+          onUpdate: () => {
+            gridState.flattenProgress = proxy.value;
+          },
+        },
+        "flatten+=0.3",
+      );
+    }, sectionRef);
 
     return () => ctx.revert();
   }, [refs, cardDistance, verticalDistance, skewAmount]);
@@ -256,13 +259,13 @@ const CardSwap: React.FC<CardSwapProps> = ({
   );
 
   return (
+    // bg-transparent so the fixed GridCanvas shows through
     <div
       ref={sectionRef}
-      className="w-full h-screen relative bg-obsidian overflow-hidden flex items-center px-20"
+      className="w-full h-screen relative bg-transparent overflow-hidden flex items-center px-20 pointer-events-none"
     >
-      <Boxes />
-      {/* 1. LEFT SIDE: Dynamic Text Section */}
-      <div className="relative w-1/2 h-[300px]">
+      {/* LEFT: Text — re-enable pointer events for text selection */}
+      <div className="relative w-1/2 h-[300px] z-10 pointer-events-auto">
         {projects.map((project, i) => (
           <div
             key={i}
@@ -288,10 +291,10 @@ const CardSwap: React.FC<CardSwapProps> = ({
         ))}
       </div>
 
-      {/* 2. RIGHT SIDE: Swapping Cards Container */}
+      {/* RIGHT: Card Stack */}
       <div
         ref={container}
-        className="absolute bottom-0 right-0 transform translate-x-[5%] translate-y-[15%] origin-bottom-right perspective-[1500px] overflow-visible"
+        className="absolute bottom-0 right-0 transform translate-x-[5%] translate-y-[15%] origin-bottom-right perspective-[1500px] overflow-visible pointer-events-none"
         style={{ width, height }}
       >
         {rendered}
