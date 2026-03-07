@@ -10,10 +10,16 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+
 import { gridState } from "./GridCanvas";
+import { BracketLabel } from "./BracketLabel";
+import ScrambleText from "./ScrambleText";
+import { useBlurSwap } from "@/lib/hooks/useBlurSwap";
+import { useTranslation } from "@/lib/providers/LanguageProvider";
 
 export interface ProjectData {
   title: string;
@@ -28,6 +34,7 @@ export interface CardSwapProps {
   cardDistance?: number;
   verticalDistance?: number;
   skewAmount?: number;
+  language?: string;
   children: ReactNode;
 }
 
@@ -40,7 +47,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       {...rest}
-      className={`absolute top-1/2 left-1/2 rounded-xl border border-[#314158]/50 bg-[#0f172b]
+      className={`absolute top-1/2 left-1/2 rounded-xl border border-[#314158]/50 bg-[#060910]
         [transform-style:preserve-3d] [will-change:transform,opacity] [backface-visibility:hidden]
         [-webkit-font-smoothing:antialiased] shadow-2xl ${customClass ?? ""} ${rest.className ?? ""}`.trim()}
     />
@@ -80,6 +87,47 @@ const placeNow = (el: HTMLElement, slot: Slot, skew: number) =>
     force3D: true,
   });
 
+// Per-project text block with scramble + blur swap
+const ProjectText = ({
+  project,
+  language,
+}: {
+  project: ProjectData;
+  language: string;
+}) => {
+  const { displayText, style } = useBlurSwap(
+    project.description ?? "",
+    language,
+  );
+
+  return (
+    <>
+      <BracketLabel>
+        <div className="tracking-normal xl:tracking-wider 2xl:tracking-widest">
+          <ScrambleText
+            text={project.project ?? ""}
+            trigger={language}
+            as="span"
+          />
+        </div>
+      </BracketLabel>
+
+      <div className="flex items-start gap-2 lg:gap-3">
+        <h2 className="text-bone md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-7xl font-black tracking-tighter uppercase italic leading-none">
+          <ScrambleText text={project.title} trigger={language} as="span" />
+        </h2>
+      </div>
+
+      <p
+        className="text-zinc-300 max-w-xs 2xl:max-w-md text-xs lg:text-sm 2xl:text-lg leading-relaxed mt-2 lg:mt-6 font-light italic whitespace-pre-line font-serif"
+        style={style}
+      >
+        {displayText}
+      </p>
+    </>
+  );
+};
+
 const CardSwap: React.FC<CardSwapProps> = ({
   projects,
   width = 1000,
@@ -87,8 +135,11 @@ const CardSwap: React.FC<CardSwapProps> = ({
   cardDistance = 60,
   verticalDistance = 70,
   skewAmount = 6,
+  language = "en",
   children,
 }) => {
+  const { t } = useTranslation();
+
   const childArr = useMemo(
     () => Children.toArray(children) as ReactElement<CardProps>[],
     [children],
@@ -101,14 +152,18 @@ const CardSwap: React.FC<CardSwapProps> = ({
   const container = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const textRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const total = refs.length;
     if (total === 0) return;
 
-    // Reset grid to skewed state when this section mounts
+    gridState.heroProgress = 1;
     gridState.flattenProgress = 0;
+
+    const totalSteps = total + 1;
 
     const ctx = gsap.context(() => {
       refs.forEach((r, i) =>
@@ -125,20 +180,35 @@ const CardSwap: React.FC<CardSwapProps> = ({
         pointerEvents: "none",
       });
 
-      const totalSteps = total + 1;
-
       const masterTl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top top",
-          end: `+=${totalSteps * 1200}`,
+          end: `+=${(totalSteps + 1) * 2000}`,
           pin: true,
-          scrub: 1,
-          snap: 1 / totalSteps,
+          scrub: 0.8,
+          anticipatePin: 1,
+          preventOverlaps: true,
+          fastScrollEnd: true,
+          refreshPriority: 0,
+          snap: {
+            snapTo: 1 / totalSteps,
+            duration: { min: 0.3, max: 0.6 },
+            delay: 0.2,
+            ease: "power2.inOut",
+          },
+          onUpdate: (self) => {
+            const p = self.progress;
+            const total_duration = totalSteps + 1;
+            const flattenStart = total / total_duration;
+            const show = p > 0.00001 && p < flattenStart - 0.01;
+            setIsActive(show);
+
+            const stepSize = 1 / total_duration;
+            const idx = Math.min(Math.floor(p / stepSize), total - 1);
+            setActiveIndex(idx);
+          },
           onRefresh: () => {
-            // GSAP wraps the pinned element in a .pin-spacer div which
-            // captures pointer events across the entire scroll distance.
-            // Disable it so clicks reach the canvas underneath.
             const spacer = sectionRef.current?.parentElement;
             if (spacer?.classList.contains("pin-spacer")) {
               (spacer as HTMLElement).style.pointerEvents = "none";
@@ -147,7 +217,8 @@ const CardSwap: React.FC<CardSwapProps> = ({
         },
       });
 
-      // --- Card cycle ---
+      masterTl.to({}, { duration: 1 });
+
       for (let step = 0; step < total; step++) {
         const label = `step${step}`;
         masterTl.addLabel(label);
@@ -206,10 +277,9 @@ const CardSwap: React.FC<CardSwapProps> = ({
         });
       }
 
-      // --- Flatten phase ---
       masterTl.addLabel("flatten");
+      masterTl.call(() => setIsActive(false), [], "flatten");
 
-      // Dismiss all remaining cards
       refs.forEach((ref) => {
         masterTl.to(
           ref.current!,
@@ -218,7 +288,6 @@ const CardSwap: React.FC<CardSwapProps> = ({
         );
       });
 
-      // Fade last text
       const lastText = textRefs.current[total - 1];
       if (lastText) {
         masterTl.to(
@@ -228,9 +297,6 @@ const CardSwap: React.FC<CardSwapProps> = ({
         );
       }
 
-      // Drive gridState.flattenProgress from 0 → 1.
-      // GridCanvas reads this each frame to compute skew/scale.
-      // Using a proxy object so GSAP can tween a plain number.
       const proxy = { value: 0 };
       masterTl.to(
         proxy,
@@ -246,7 +312,23 @@ const CardSwap: React.FC<CardSwapProps> = ({
       );
     }, sectionRef);
 
-    return () => ctx.revert();
+    const el = sectionRef.current;
+    const observer = new MutationObserver(() => {
+      if (el && el.style.position === "fixed") {
+        el.style.width = `${document.documentElement.clientWidth}px`;
+        el.style.maxWidth = `${document.documentElement.clientWidth}px`;
+      } else if (el) {
+        el.style.width = "";
+        el.style.maxWidth = "";
+      }
+    });
+    if (el)
+      observer.observe(el, { attributes: true, attributeFilter: ["style"] });
+
+    return () => {
+      ctx.revert();
+      observer.disconnect();
+    };
   }, [refs, cardDistance, verticalDistance, skewAmount]);
 
   const rendered = childArr.map((child, i) =>
@@ -259,47 +341,79 @@ const CardSwap: React.FC<CardSwapProps> = ({
   );
 
   return (
-    // bg-transparent so the fixed GridCanvas shows through
-    <div
-      ref={sectionRef}
-      className="w-full h-screen relative bg-transparent overflow-hidden flex items-center px-20 pointer-events-none"
-    >
-      {/* LEFT: Text — re-enable pointer events for text selection */}
-      <div className="relative w-1/2 h-[300px] z-10 pointer-events-auto">
-        {projects.map((project, i) => (
-          <div
-            key={i}
-            ref={(el) => {
-              textRefs.current[i] = el;
-            }}
-            className="absolute inset-0 flex flex-col justify-center gap-4"
-          >
-            <div className="flex items-center gap-4">
-              <span className="w-12 h-px bg-cyan-400" />
-              <span className="text-cyan-400 font-mono text-sm tracking-[0.4em] uppercase">
-                {project.project}
-              </span>
+    <>
+      <div
+        ref={sectionRef}
+        style={{ width: "100%" }}
+        className="w-full h-screen relative bg-transparent overflow-hidden flex items-center px-6 lg:px-12 xl:px-20 pointer-events-none"
+      >
+        {/* LEFT: Text */}
+        <div className="relative w-1/2 h-[300px] z-10 pointer-events-auto">
+          {projects.map((project, i) => (
+            <div
+              key={i}
+              ref={(el) => {
+                textRefs.current[i] = el;
+              }}
+              className="absolute inset-0 flex flex-col justify-center gap-2 lg:gap-4"
+            >
+              <ProjectText
+                key={`${i}-${language}`}
+                project={project}
+                language={language}
+              />
             </div>
-            <h2 className="text-bone text-7xl font-black tracking-tighter uppercase italic leading-none">
-              {project.title}
-            </h2>
-            <p className="text-zinc-300 max-w-md lg:text-lg leading-relaxed mt-6 font-light italic whitespace-pre-line font-serif">
-              {project.description ||
-                "Experimental design and development focusing on immersive web interfaces."}
-            </p>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* RIGHT: Card Stack */}
+        <div
+          ref={container}
+          className="absolute bottom-0 right-0 transform translate-x-[5%] translate-y-[15%] origin-bottom-right perspective-[1500px] overflow-visible pointer-events-none"
+          style={{ width, height }}
+        >
+          {rendered}
+        </div>
       </div>
 
-      {/* RIGHT: Card Stack */}
+      {/* Fixed label + dots */}
       <div
-        ref={container}
-        className="absolute bottom-0 right-0 transform translate-x-[5%] translate-y-[15%] origin-bottom-right perspective-[1500px] overflow-visible pointer-events-none"
-        style={{ width, height }}
+        className="fixed top-8 left-1/2 z-50 pointer-events-none flex flex-col items-center gap-3"
+        style={{
+          opacity: isActive ? 1 : 0,
+          filter: isActive ? "blur(0px)" : "blur(8px)",
+          transform: `translateX(-50%) translateY(${isActive ? "0px" : "-10px"})`,
+          transition:
+            "opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease",
+        }}
       >
-        {rendered}
+        <ScrambleText
+          text={`[ ${t("selected_work")} ]`}
+          trigger={language}
+          as="span"
+          className="font-mono text-xs tracking-[0.5em] uppercase"
+          style={{
+            color: "#E2D1A4",
+            filter: "drop-shadow(0 0 6px rgba(226,209,164,0.5))",
+          }}
+        />
+        <div className="flex items-center gap-2">
+          {projects.map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: i === activeIndex ? 20 : 6,
+                height: 6,
+                borderRadius: 3,
+                background: "#E2D1A4",
+                opacity: i === activeIndex ? 1 : 0.25,
+                transition: "all 0.4s ease",
+              }}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

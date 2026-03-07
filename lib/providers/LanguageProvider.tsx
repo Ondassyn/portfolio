@@ -1,5 +1,12 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { translations, Language, TranslationKeys } from "../utils/translations";
 
 interface LanguageContextType {
@@ -13,9 +20,21 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>("en");
 
-  // Translation helper function
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("portfolio_language") as Language | null;
+    if (saved && saved in translations) {
+      setLanguageState(saved);
+    }
+  }, []);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem("portfolio_language", lang);
+  };
+
   const t = (key: TranslationKeys): string => {
     return translations[language][key] || key;
   };
@@ -27,7 +46,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook for consuming the context
 export const useTranslation = () => {
   const context = useContext(LanguageContext);
   if (!context) {

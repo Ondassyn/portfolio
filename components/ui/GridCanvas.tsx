@@ -6,7 +6,7 @@ const INITIAL_SKEW_X = -48;
 const INITIAL_SKEW_Y = 14;
 const INITIAL_SCALE = 0.675;
 const SQUARE_SIZE = 64;
-const BORDER_COLOR = "rgba(51, 65, 85, 0.9)";
+const BORDER_COLOR = "rgba(148, 163, 184, 0.55)";
 
 const COLORS = [
   "rgb(56, 189, 248)",
@@ -42,15 +42,18 @@ interface PopAnimation {
 }
 
 export const gridState = {
-  flattenProgress: 0,
+  heroProgress: 0, // 0 = box/hero, 1 = full screen skewed
+  flattenProgress: 0, // 0 = skewed, 1 = flat/contacts
   targetSpeed: 0,
   popCount: 0,
 };
 
+const easeInOut = (t: number) =>
+  t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
 const GridCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
-
   const currentSpeed = useRef(0);
   const totalOffset = useRef({ x: 0, y: 0 });
   const frameRef = useRef(0);
@@ -71,7 +74,6 @@ const GridCanvas: React.FC = () => {
     if (!canvas) return;
     const nx = Math.ceil(canvas.width / SQUARE_SIZE) + 2;
     const ny = Math.ceil(canvas.height / SQUARE_SIZE) + 2;
-
     for (let attempt = 0; attempt < 20; attempt++) {
       const col = Math.floor(Math.random() * (nx - 2)) + 1;
       const row = Math.floor(Math.random() * (ny - 2)) + 1;
@@ -105,7 +107,7 @@ const GridCanvas: React.FC = () => {
     if (!ctx) return;
 
     const resize = () => {
-      canvas.width = window.innerWidth;
+      canvas.width = document.documentElement.clientWidth;
       canvas.height = window.innerHeight;
     };
     window.addEventListener("resize", resize);
@@ -117,27 +119,29 @@ const GridCanvas: React.FC = () => {
       const W = canvas.width;
       const H = canvas.height;
 
-      const p = Math.max(0, Math.min(1, gridState.flattenProgress));
-      const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-      const skewX = INITIAL_SKEW_X * (1 - eased);
-      const skewY = INITIAL_SKEW_Y * (1 - eased);
-      const scale = INITIAL_SCALE + (1 - INITIAL_SCALE) * eased;
+      // heroProgress builds skew up, flattenProgress tears it back down
+      const heroEased = easeInOut(
+        Math.max(0, Math.min(1, gridState.heroProgress)),
+      );
+      const flatEased = easeInOut(
+        Math.max(0, Math.min(1, gridState.flattenProgress)),
+      );
+      const combined = heroEased * (1 - flatEased);
+      const skewX = INITIAL_SKEW_X * combined;
+      const skewY = INITIAL_SKEW_Y * combined;
+      const scale = 1 - (1 - INITIAL_SCALE) * combined;
 
+      // Speed
       const diff = gridState.targetSpeed - currentSpeed.current;
-      if (Math.abs(diff) > 0.0005) {
-        currentSpeed.current += diff * 0.012;
-      } else {
-        currentSpeed.current = gridState.targetSpeed;
-      }
-      const s = currentSpeed.current;
-      totalOffset.current.x -= s;
-      totalOffset.current.y -= s;
+      if (Math.abs(diff) > 0.0005) currentSpeed.current += diff * 0.012;
+      else currentSpeed.current = gridState.targetSpeed;
+      totalOffset.current.x -= currentSpeed.current;
+      totalOffset.current.y -= currentSpeed.current;
 
       frameRef.current++;
       spawnTimer.current++;
-      if (spawnTimer.current % 60 === 0 && coloredSquares.current.length < 8) {
+      if (spawnTimer.current % 60 === 0 && coloredSquares.current.length < 8)
         spawnSquare();
-      }
 
       coloredSquares.current = coloredSquares.current.filter(
         ({ worldX, worldY }) => {
@@ -151,10 +155,22 @@ const GridCanvas: React.FC = () => {
         },
       );
 
-      ctx.clearRect(0, 0, W, H);
+      // Background
       ctx.fillStyle = "#0f172b";
       ctx.fillRect(0, 0, W, H);
 
+      // Clip rect: box in hero (62%×52% centered) expands to full canvas
+      const boxW = W * (0.62 + 0.38 * heroEased);
+      const boxH = H * (0.52 + 0.48 * heroEased);
+      const boxX = (W - boxW) / 2;
+      const boxY = (H - boxH) / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(boxX, boxY, boxW, boxH);
+      ctx.clip();
+
+      // Perspective transform
       ctx.save();
       ctx.translate(W / 2, H / 2);
       ctx.scale(scale, scale);
@@ -163,15 +179,15 @@ const GridCanvas: React.FC = () => {
       ctx.transform(1, Math.tan(sy_rad), Math.tan(sx_rad), 1, 0, 0);
       ctx.translate(-W / 2, -H / 2);
 
+      // Grid lines
       const ox =
         ((totalOffset.current.x % SQUARE_SIZE) + SQUARE_SIZE) % SQUARE_SIZE;
       const oy =
         ((totalOffset.current.y % SQUARE_SIZE) + SQUARE_SIZE) % SQUARE_SIZE;
       const padRaw = Math.max(W, H) * 2;
       const pad = Math.ceil(padRaw / SQUARE_SIZE) * SQUARE_SIZE;
-
       ctx.strokeStyle = BORDER_COLOR;
-      ctx.lineWidth = 0.5;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       for (let x = -ox - pad; x < W + pad + SQUARE_SIZE; x += SQUARE_SIZE) {
         ctx.moveTo(x, -pad);
@@ -183,6 +199,7 @@ const GridCanvas: React.FC = () => {
       }
       ctx.stroke();
 
+      // Colored squares
       for (const sq of coloredSquares.current) {
         const { sx, sy } = worldToScreen(sq.worldX, sq.worldY);
         const pulse =
@@ -199,13 +216,13 @@ const GridCanvas: React.FC = () => {
         ctx.globalAlpha = 1;
       }
 
+      // Pop animations
       popAnimations.current = popAnimations.current.filter((anim) => {
         anim.shockwave += 5;
         anim.shockwaveAlpha = Math.max(
           0,
           1 - anim.shockwave / (SQUARE_SIZE * 2.5),
         );
-
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
         if (anim.shockwaveAlpha > 0) {
@@ -235,9 +252,10 @@ const GridCanvas: React.FC = () => {
         return anyAlive || anim.shockwaveAlpha > 0;
       });
 
-      ctx.restore(); // restore perspective transform
+      ctx.restore(); // perspective
+      ctx.restore(); // clip
 
-      // Vignette — drawn after ctx.restore() so it's always screen-aligned
+      // Vignette — always on, screen-aligned
       const vignette = ctx.createRadialGradient(
         W / 2,
         H / 2,
@@ -256,8 +274,6 @@ const GridCanvas: React.FC = () => {
 
     rafRef.current = requestAnimationFrame(draw);
 
-    // Click handler — coordinates only align with the canvas when the grid
-    // is flat (identity transform), which is when targetSpeed > 0.
     const handleClick = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
@@ -307,19 +323,18 @@ const GridCanvas: React.FC = () => {
       }
     };
 
-    canvas.addEventListener("click", handleClick);
-
+    window.addEventListener("click", handleClick);
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
-      canvas.removeEventListener("click", handleClick);
+      window.removeEventListener("click", handleClick);
     };
   }, [spawnSquare, worldToScreen]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-0 w-full h-full pointer-events-auto cursor-crosshair"
+      className="fixed inset-0 z-0 w-full h-full pointer-events-none cursor-crosshair"
     />
   );
 };
