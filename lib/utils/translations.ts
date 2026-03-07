@@ -74,6 +74,10 @@ export const translations = {
       "Got a complex problem, a product to ship, or a gap in your team? That's exactly where I come in.",
     contacts_game_hint: "[ while you think it over — pop a colorful square ]",
     squares_popped: "Squares_Popped",
+    not_found_label: "error 404",
+    not_found_message:
+      "This page doesn't exist — but the rest of the portfolio does.",
+    not_found_back: "back to portfolio",
   },
 
   ru: {
@@ -153,6 +157,10 @@ export const translations = {
       "Сложная задача, продукт на запуске или дыра в команде? Именно для этого я здесь.",
     contacts_game_hint: "[ пока думаете — лопните цветной квадрат ]",
     squares_popped: "Квадратов_Лопнуто",
+    not_found_label: "ошибка 404",
+    not_found_message:
+      "Такой страницы нет — зато остальное портфолио на месте.",
+    not_found_back: "вернуться",
   },
 
   kz: {
@@ -233,6 +241,9 @@ export const translations = {
       "Күрделі мәселе, іске қосылатын өнім немесе командадағы олқылық па? Дәл осы жерде мен кіреді.",
     contacts_game_hint: "[ ойланып жатқанда — түрлі-түсті шаршыны жарыңыз ]",
     squares_popped: "Жарылған_Шаршылар",
+    not_found_label: "қате 404",
+    not_found_message: "Бұл бет жоқ — бірақ портфолионың қалған бөлігі бар.",
+    not_found_back: "артқа қайту",
   },
 };
 
