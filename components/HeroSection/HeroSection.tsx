@@ -125,6 +125,14 @@ const HeroSection = () => {
         opacity={bracketOpacity}
         className="absolute z-0"
         transition="width 0.15s ease-out, height 0.15s ease-out, opacity 0.2s ease"
+        bottomContent={
+          <p
+            className="md:hidden font-mono text-[10px] tracking-[0.4em] uppercase text-center px-4"
+            style={{ color: "#E2D1A4", opacity: 0.4 }}
+          >
+            <ScrambleText text={t("desktop_hint")} trigger={language} />
+          </p>
+        }
       />
 
       {/* Center text content */}
@@ -164,7 +172,7 @@ const HeroSection = () => {
 
         {/* Description — blur swap */}
         <p
-          className="text-zinc-400 text-xs md:text-base font-light text-center max-w-sm: md:max-w-md leading-relaxed whitespace-pre-line"
+          className="text-zinc-400 text-xs md:text-base font-light text-center max-w-40 md:max-w-md leading-relaxed whitespace-pre-line"
           style={descriptionStyle}
         >
           {descriptionText}

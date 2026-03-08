@@ -24,8 +24,6 @@ const ProjectsSection = () => {
   const [cardDims, setCardDims] = useState({ width: 1000, height: 800 });
   const { t, language } = useTranslation();
 
-  console.log("language:", language, "bil_title:", t("bil_subtitle"));
-
   // Projects built from translations so they reactively update on language change
   const projects = [
     {

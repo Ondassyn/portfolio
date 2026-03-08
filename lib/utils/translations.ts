@@ -78,6 +78,9 @@ export const translations = {
     not_found_message:
       "This page doesn't exist — but the rest of the portfolio does.",
     not_found_back: "back to portfolio",
+    not_found_stay: "stay & pop squares",
+    not_found_or: "or",
+    desktop_hint: "best experienced on desktop",
   },
 
   ru: {
@@ -152,15 +155,18 @@ export const translations = {
     prev: "назад",
     next: "далее",
     contacts_label: "всегда открыт новым вызовам",
-    contacts_heading: "Давайте создадим",
+    contacts_heading: "Воплотим в коде",
     contacts_subtext:
-      "Сложная задача, продукт на запуске или дыра в команде? Именно для этого я здесь.",
+      "Сложная задача, запуск продукта или нужно усилить команду? Именно для этого я здесь",
     contacts_game_hint: "[ пока думаете — лопните цветной квадрат ]",
     squares_popped: "Квадратов_Лопнуто",
     not_found_label: "ошибка 404",
     not_found_message:
       "Такой страницы нет — зато остальное портфолио на месте.",
     not_found_back: "вернуться",
+    not_found_stay: "остаться и лопать квадраты",
+    not_found_or: "или",
+    desktop_hint: "лучше смотреть на компьютере",
   },
 
   kz: {
@@ -236,14 +242,17 @@ export const translations = {
     prev: "артқа",
     next: "алға",
     contacts_label: "жаңа қиындықтарға әрдайым дайынмын",
-    contacts_heading: "Бірге жасайық",
+    contacts_heading: "Биік белестерге бірге",
     contacts_subtext:
-      "Күрделі мәселе, іске қосылатын өнім немесе командадағы олқылық па? Дәл осы жерде мен кіреді.",
+      "Күрделі тапсырма, өнімді іске қосу немесе команданы күшейту керек пе? Мен дәл осы үшін осындамын.",
     contacts_game_hint: "[ ойланып жатқанда — түрлі-түсті шаршыны жарыңыз ]",
     squares_popped: "Жарылған_Шаршылар",
     not_found_label: "қате 404",
     not_found_message: "Бұл бет жоқ — бірақ портфолионың қалған бөлігі бар.",
     not_found_back: "артқа қайту",
+    not_found_stay: "қалып, шаршыларды жару",
+    not_found_or: "немесе",
+    desktop_hint: "компьютерде жақсы көрінеді",
   },
 };
 

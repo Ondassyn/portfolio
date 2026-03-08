@@ -8,7 +8,8 @@ interface BracketsProps {
   children?: React.ReactNode;
   opacity?: number;
   className?: string;
-  transition?: string; // New prop
+  transition?: string;
+  bottomContent?: React.ReactNode;
 }
 
 export default function Brackets({
@@ -19,7 +20,8 @@ export default function Brackets({
   children,
   opacity = 1,
   className = "",
-  transition = "all 0.8s cubic-bezier(0.4, 0, 0.2, 1)", // Default for Loader
+  transition = "all 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+  bottomContent,
 }: BracketsProps) {
   const commonStyle: React.CSSProperties = {
     position: "absolute",
@@ -55,6 +57,12 @@ export default function Brackets({
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
         {children}
       </div>
+
+      {bottomContent && (
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center pointer-events-none">
+          {bottomContent}
+        </div>
+      )}
       <div
         style={{
           ...commonStyle,

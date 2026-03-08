@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ScrambleText from "@/components/ui/ScrambleText";
 import { useTranslation } from "@/lib/providers/LanguageProvider";
+import GridCanvas from "@/components/ui/GridCanvas";
+import TargetCursor from "@/components/ui/TargetCursor";
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 
 export default function NotFound() {
   const router = useRouter();
@@ -17,19 +20,12 @@ export default function NotFound() {
 
   return (
     <div className="fixed inset-0 bg-[#060910] flex flex-col items-center justify-center overflow-hidden">
-      {/* Subtle grid dot background */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, #1a2744 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          opacity: 0.3,
-        }}
-      />
+      <TargetCursor targetSelector=".cursor-target" />
+      <LanguageSwitcher />
+      <GridCanvas standalone />
 
       {/* Corner brackets — top left */}
-      <div className="absolute top-10 left-10 pointer-events-none">
+      <div className="absolute top-15 left-10 pointer-events-none">
         <div
           style={{ width: 32, height: 2, background: "#E2D1A4", opacity: 0.4 }}
         />
@@ -44,7 +40,7 @@ export default function NotFound() {
         />
       </div>
       {/* Corner brackets — top right */}
-      <div className="absolute top-10 right-10 flex flex-col items-end pointer-events-none">
+      <div className="absolute top-15 right-10 flex flex-col items-end pointer-events-none">
         <div
           style={{ width: 32, height: 2, background: "#E2D1A4", opacity: 0.4 }}
         />
@@ -59,7 +55,7 @@ export default function NotFound() {
         />
       </div>
       {/* Corner brackets — bottom left */}
-      <div className="absolute bottom-10 left-10 flex flex-col justify-end pointer-events-none">
+      <div className="absolute bottom-15 left-10 flex flex-col justify-end pointer-events-none">
         <div
           style={{ width: 2, height: 32, background: "#E2D1A4", opacity: 0.4 }}
         />
@@ -74,7 +70,7 @@ export default function NotFound() {
         />
       </div>
       {/* Corner brackets — bottom right */}
-      <div className="absolute bottom-10 right-10 flex flex-col items-end justify-end pointer-events-none">
+      <div className="absolute bottom-15 right-10 flex flex-col items-end justify-end pointer-events-none">
         <div
           style={{
             width: 2,
@@ -97,7 +93,7 @@ export default function NotFound() {
 
       {/* Main content */}
       <div
-        className="flex flex-col items-center gap-6 text-center px-6"
+        className="relative z-10 flex flex-col items-center gap-6 text-center px-6"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0px)" : "translateY(20px)",
@@ -136,17 +132,44 @@ export default function NotFound() {
           />
         </p>
 
-        {/* Back button */}
-        <button
-          onClick={() => router.push("/")}
-          className="mt-4 px-8 py-3 border border-accent-gold/50 text-accent-gold font-mono text-sm tracking-widest uppercase hover:bg-accent-gold/10 transition-colors duration-300"
-        >
-          <ScrambleText
-            text={t("not_found_back")}
-            trigger={language}
-            duration={400}
-          />
-        </button>
+        {/* Stay or go */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
+          {/* Stay — muted, since it's the passive option */}
+          <span
+            className="font-mono text-sm tracking-widest uppercase"
+            style={{ color: "rgba(226,209,164,0.4)" }}
+          >
+            <ScrambleText
+              text={t("not_found_stay")}
+              trigger={language}
+              duration={400}
+            />
+          </span>
+
+          <span
+            className="font-mono text-xs"
+            style={{ color: "rgba(226,209,164,0.3)" }}
+          >
+            <ScrambleText
+              text={t("not_found_or")}
+              trigger={language}
+              duration={300}
+            />
+          </span>
+
+          {/* Back to portfolio — gold, primary action */}
+          <button
+            onClick={() => router.push("/")}
+            className="cursor-target px-8 py-3 border border-accent-gold/50 text-accent-gold font-mono text-sm tracking-widest uppercase hover:bg-accent-gold/10 transition-colors duration-300"
+            style={{ pointerEvents: "auto" }}
+          >
+            <ScrambleText
+              text={t("not_found_back")}
+              trigger={language}
+              duration={400}
+            />
+          </button>
+        </div>
       </div>
     </div>
   );

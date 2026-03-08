@@ -42,8 +42,8 @@ interface PopAnimation {
 }
 
 export const gridState = {
-  heroProgress: 0, // 0 = box/hero, 1 = full screen skewed
-  flattenProgress: 0, // 0 = skewed, 1 = flat/contacts
+  heroProgress: 0,
+  flattenProgress: 0,
   targetSpeed: 0,
   popCount: 0,
 };
@@ -51,7 +51,11 @@ export const gridState = {
 const easeInOut = (t: number) =>
   t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
-const GridCanvas: React.FC = () => {
+interface GridCanvasProps {
+  standalone?: boolean; // skips scroll logic — flat grid, always active
+}
+
+const GridCanvas: React.FC<GridCanvasProps> = ({ standalone = false }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
   const currentSpeed = useRef(0);
@@ -60,6 +64,23 @@ const GridCanvas: React.FC = () => {
   const coloredSquares = useRef<ColoredSquare[]>([]);
   const popAnimations = useRef<PopAnimation[]>([]);
   const spawnTimer = useRef(0);
+
+  // In standalone mode, force flat fully-active state immediately
+  useEffect(() => {
+    if (standalone) {
+      gridState.heroProgress = 1;
+      gridState.flattenProgress = 1;
+      gridState.targetSpeed = 0.4;
+    }
+    // Cleanup: reset when leaving standalone page
+    return () => {
+      if (standalone) {
+        gridState.heroProgress = 0;
+        gridState.flattenProgress = 0;
+        gridState.targetSpeed = 0;
+      }
+    };
+  }, [standalone]);
 
   const worldToScreen = useCallback(
     (wx: number, wy: number) => ({
@@ -113,13 +134,14 @@ const GridCanvas: React.FC = () => {
     window.addEventListener("resize", resize);
     resize();
 
-    for (let i = 0; i < 8; i++) spawnSquare();
+    // Spawn more squares in standalone mode since there's more to fill
+    const initialCount = standalone ? 14 : 8;
+    for (let i = 0; i < initialCount; i++) spawnSquare();
 
     const draw = () => {
       const W = canvas.width;
       const H = canvas.height;
 
-      // heroProgress builds skew up, flattenProgress tears it back down
       const heroEased = easeInOut(
         Math.max(0, Math.min(1, gridState.heroProgress)),
       );
@@ -131,7 +153,6 @@ const GridCanvas: React.FC = () => {
       const skewY = INITIAL_SKEW_Y * combined;
       const scale = 1 - (1 - INITIAL_SCALE) * combined;
 
-      // Speed
       const diff = gridState.targetSpeed - currentSpeed.current;
       if (Math.abs(diff) > 0.0005) currentSpeed.current += diff * 0.012;
       else currentSpeed.current = gridState.targetSpeed;
@@ -140,7 +161,11 @@ const GridCanvas: React.FC = () => {
 
       frameRef.current++;
       spawnTimer.current++;
-      if (spawnTimer.current % 60 === 0 && coloredSquares.current.length < 8)
+      const maxSquares = standalone ? 14 : 8;
+      if (
+        spawnTimer.current % 60 === 0 &&
+        coloredSquares.current.length < maxSquares
+      )
         spawnSquare();
 
       coloredSquares.current = coloredSquares.current.filter(
@@ -155,11 +180,9 @@ const GridCanvas: React.FC = () => {
         },
       );
 
-      // Background
       ctx.fillStyle = "#0f172b";
       ctx.fillRect(0, 0, W, H);
 
-      // Clip rect: box in hero (62%×52% centered) expands to full canvas
       const boxW = W * (0.62 + 0.38 * heroEased);
       const boxH = H * (0.52 + 0.48 * heroEased);
       const boxX = (W - boxW) / 2;
@@ -170,7 +193,6 @@ const GridCanvas: React.FC = () => {
       ctx.rect(boxX, boxY, boxW, boxH);
       ctx.clip();
 
-      // Perspective transform
       ctx.save();
       ctx.translate(W / 2, H / 2);
       ctx.scale(scale, scale);
@@ -179,7 +201,6 @@ const GridCanvas: React.FC = () => {
       ctx.transform(1, Math.tan(sy_rad), Math.tan(sx_rad), 1, 0, 0);
       ctx.translate(-W / 2, -H / 2);
 
-      // Grid lines
       const ox =
         ((totalOffset.current.x % SQUARE_SIZE) + SQUARE_SIZE) % SQUARE_SIZE;
       const oy =
@@ -199,7 +220,6 @@ const GridCanvas: React.FC = () => {
       }
       ctx.stroke();
 
-      // Colored squares
       for (const sq of coloredSquares.current) {
         const { sx, sy } = worldToScreen(sq.worldX, sq.worldY);
         const pulse =
@@ -216,7 +236,6 @@ const GridCanvas: React.FC = () => {
         ctx.globalAlpha = 1;
       }
 
-      // Pop animations
       popAnimations.current = popAnimations.current.filter((anim) => {
         anim.shockwave += 5;
         anim.shockwaveAlpha = Math.max(
@@ -252,10 +271,9 @@ const GridCanvas: React.FC = () => {
         return anyAlive || anim.shockwaveAlpha > 0;
       });
 
-      ctx.restore(); // perspective
-      ctx.restore(); // clip
+      ctx.restore();
+      ctx.restore();
 
-      // Vignette — always on, screen-aligned
       const vignette = ctx.createRadialGradient(
         W / 2,
         H / 2,
@@ -329,7 +347,7 @@ const GridCanvas: React.FC = () => {
       window.removeEventListener("resize", resize);
       window.removeEventListener("click", handleClick);
     };
-  }, [spawnSquare, worldToScreen]);
+  }, [spawnSquare, worldToScreen, standalone]);
 
   return (
     <canvas
