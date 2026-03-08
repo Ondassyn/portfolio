@@ -121,7 +121,7 @@ export default function Loader({
     }
   }, [expanding, onComplete]);
 
-  const width = expanding ? "65%" : 180;
+  const width = expanding ? "max(65%, 320px)" : 180;
   const height = expanding ? "55%" : 80;
 
   return (

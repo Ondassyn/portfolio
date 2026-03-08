@@ -103,7 +103,7 @@ const HeroSection = () => {
   }, []);
 
   const velocityFactor = Math.pow(progress * 1.6, 2);
-  const currentWidth = `${BOX_W_RATIO * 100 + velocityFactor * 60}%`;
+  const currentWidth = `max(${BOX_W_RATIO * 100 + velocityFactor * 60}%, 320px)`;
   const currentHeight = `${BOX_H_RATIO * 100 + velocityFactor * 40}%`;
   const bracketOpacity = Math.max(0, 1 - progress / 0.3);
   const textOpacity = Math.max(0, 1 - progress / 0.3);
