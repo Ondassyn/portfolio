@@ -107,7 +107,7 @@ const ContactsSection = () => {
         <div className="flex flex-col sm:flex-row items-center gap-3 mt-2 pointer-events-auto w-full sm:w-auto">
           {/* Email */}
           <a
-            href="mailto:your@email.com"
+            href="mailto:oabdrakhmanov@alumni.nu.edu.kz"
             className="cursor-target flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto border border-accent-gold/50 text-accent-gold font-mono text-sm tracking-widest uppercase hover:bg-accent-gold/10 transition-colors duration-300"
           >
             <Mail size={14} />
@@ -116,7 +116,7 @@ const ContactsSection = () => {
 
           {/* Telegram */}
           <a
-            href="https://t.me/yourtelegramhandle"
+            href="https://t.me/CocoZohan"
             target="_blank"
             rel="noopener noreferrer"
             className="cursor-target flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto border border-cyan-500/40 text-cyan-400 font-mono text-sm tracking-widest uppercase hover:border-cyan-400/70 hover:bg-cyan-500/10 transition-colors duration-300"
