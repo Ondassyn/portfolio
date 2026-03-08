@@ -108,7 +108,8 @@ const ContactsSection = () => {
           {/* Email */}
           <a
             href="mailto:oabdrakhmanov@alumni.nu.edu.kz"
-            className="cursor-target flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto border border-accent-gold/50 text-accent-gold font-mono text-sm tracking-widest uppercase hover:bg-accent-gold/10 transition-colors duration-300"
+            className="cursor-target flex items-center justify-center gap-2 px-6 py-3 w-full 
+              sm:w-auto border border-accent-gold/50 text-accent-gold font-mono text-sm uppercase hover:bg-accent-gold/10 transition-colors duration-300"
           >
             <Mail size={14} />
             oabdrakhmanov@alumni.nu.edu.kz
