@@ -25,6 +25,7 @@ export interface ProjectData {
   title: string;
   project?: string;
   description?: string;
+  url?: string;
 }
 
 export interface CardSwapProps {
@@ -113,9 +114,16 @@ const ProjectText = ({
       </BracketLabel>
 
       <div className="flex items-start gap-2 lg:gap-3">
-        <h2 className="text-bone md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-7xl font-black tracking-tighter uppercase italic leading-none">
-          <ScrambleText text={project.title} trigger={language} as="span" />
-        </h2>
+        <a
+          href={project.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="cursor-pointer hover:opacity-70 transition-opacity duration-200"
+        >
+          <h2 className="text-bone md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-7xl font-black tracking-tighter uppercase italic leading-none">
+            <ScrambleText text={project.title} trigger={language} as="span" />
+          </h2>
+        </a>
       </div>
 
       <p

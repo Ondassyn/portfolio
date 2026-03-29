@@ -98,19 +98,28 @@ const ProjectsSection = () => {
               >
                 <div className="flex flex-col h-full w-full overflow-hidden [transform-style:preserve-3d]">
                   <BrowserBar url={project.url} />
+
                   <div className="grow w-full relative [transform-style:preserve-3d]">
-                    <Image
-                      src={project.image}
-                      alt=""
-                      fill
-                      className="object-cover object-left"
-                      style={{
-                        transform: "translateZ(2px)",
-                        imageRendering: "auto",
-                      }}
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      priority
-                    />
+                    <a
+                      href={project.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col h-full w-full overflow-hidden [transform-style:preserve-3d] cursor-pointer"
+                      style={{ pointerEvents: "auto" }}
+                    >
+                      <Image
+                        src={project.image}
+                        alt=""
+                        fill
+                        className="object-cover object-left"
+                        style={{
+                          transform: "translateZ(2px)",
+                          imageRendering: "auto",
+                        }}
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        priority
+                      />
+                    </a>
                   </div>
                 </div>
               </SpotlightCard>
