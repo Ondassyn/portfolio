@@ -37,6 +37,7 @@ export interface CardSwapProps {
   skewAmount?: number;
   language?: string;
   children: ReactNode;
+  vh?: number;
 }
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -92,19 +93,28 @@ const placeNow = (el: HTMLElement, slot: Slot, skew: number) =>
 const ProjectText = ({
   project,
   language,
+  vh,
 }: {
   project: ProjectData;
   language: string;
+  vh: number | undefined;
 }) => {
   const { displayText, style } = useBlurSwap(
     project.description ?? "",
     language,
   );
 
+  const titleSize = Math.max(24, Math.min(vh! * 0.07, 72));
+  const descSize = Math.max(11, Math.min(vh! * 0.016, 18));
+  const subtitleSize = Math.max(10, Math.min(vh! * 0.013, 14));
+
   return (
     <>
       <BracketLabel>
-        <div className="tracking-normal xl:tracking-wider 2xl:tracking-widest">
+        <div
+          style={{ fontSize: subtitleSize }}
+          className="tracking-normal xl:tracking-wider 2xl:tracking-widest"
+        >
           <ScrambleText
             text={project.project ?? ""}
             trigger={language}
@@ -120,15 +130,18 @@ const ProjectText = ({
           rel="noopener noreferrer"
           className="cursor-pointer hover:opacity-70 transition-opacity duration-200"
         >
-          <h2 className="text-bone md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-7xl font-black tracking-tighter uppercase italic leading-none">
+          <h2
+            style={{ fontSize: titleSize }}
+            className="text-bone font-black tracking-tighter uppercase italic leading-none"
+          >
             <ScrambleText text={project.title} trigger={language} as="span" />
           </h2>
         </a>
       </div>
 
       <p
-        className="text-zinc-300 max-w-xs 2xl:max-w-md text-xs lg:text-sm 2xl:text-lg leading-relaxed mt-2 lg:mt-6 font-light italic whitespace-pre-line font-serif"
-        style={style}
+        className="text-zinc-300 max-w-xs 2xl:max-w-md text-xs lg:text-sm 2xl:text-lg leading-relaxed lg:mt-4 font-light italic whitespace-pre-line font-serif"
+        style={{ ...style, fontSize: descSize }}
       >
         {displayText}
       </p>
@@ -144,6 +157,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
   verticalDistance = 70,
   skewAmount = 6,
   language = "en",
+  vh,
   children,
 }) => {
   const { t } = useTranslation();
@@ -369,6 +383,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
                 key={`${i}-${language}`}
                 project={project}
                 language={language}
+                vh={vh}
               />
             </div>
           ))}

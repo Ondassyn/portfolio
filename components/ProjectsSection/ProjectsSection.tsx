@@ -11,11 +11,24 @@ import { useTranslation } from "@/lib/providers/LanguageProvider";
 
 const [bilorg, idp, jeojeo, wholying, fincher] = PROJECT_IMAGES;
 
-const getCardDimensions = (vw: number) => {
-  if (vw >= 1536) return { width: 1000, height: 800 };
-  if (vw >= 1280) return { width: 820, height: 660 };
-  if (vw >= 1024) return { width: 640, height: 520 };
-  return { width: 520, height: 420 };
+const getCardDimensions = (vw: number, vh: number) => {
+  let width, height;
+
+  if (vw >= 1536 && vh >= 1200) {
+    width = 1000;
+    height = 800;
+  } else if (vw >= 1280 && vh >= 800) {
+    width = 820;
+    height = 660;
+  } else if (vw >= 1024 && vh >= 600) {
+    width = 640;
+    height = 520;
+  } else {
+    width = 520;
+    height = 420;
+  }
+
+  return { width, height };
 };
 
 const ProjectsSection = () => {
@@ -23,6 +36,7 @@ const ProjectsSection = () => {
   const [mounted, setMounted] = useState(false);
   const [cardDims, setCardDims] = useState({ width: 1000, height: 800 });
   const { t, language } = useTranslation();
+  const [vh, setVh] = useState(0);
 
   // Projects built from translations so they reactively update on language change
   const projects = [
@@ -66,8 +80,10 @@ const ProjectsSection = () => {
   useEffect(() => {
     const update = () => {
       const vw = window.innerWidth;
+      const vh = window.innerHeight;
       setIsMobile(vw < 768);
-      setCardDims(getCardDimensions(vw));
+      setVh(vh);
+      setCardDims(getCardDimensions(vw, vh));
     };
     update();
     window.addEventListener("resize", update);
@@ -89,6 +105,7 @@ const ProjectsSection = () => {
           language={language}
           width={cardDims.width}
           height={cardDims.height}
+          vh={vh}
         >
           {projects.map((project, i) => (
             <Card key={i}>
