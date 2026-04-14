@@ -25,17 +25,20 @@ const BASE_URL = "https://ondassyn.vercel.app";
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Ondassyn Abdrakhmanov — Frontend Engineer",
+    // Lead with Software Engineer to broaden your reach
+    default: "Ondassyn Abdrakhmanov — Senior Software Engineer",
     template: "%s | Ondassyn Abdrakhmanov",
   },
   description:
-    "Turning complex problems into elegant, high-performance interfaces. Frontend Engineer specializing in React, Next.js, and motion design.",
+    "MSc in Computer Science specializing in high-scale systems and high-performance interfaces. Building full-stack solutions with React, Next.js, and Node.js.",
   keywords: [
-    "Frontend Engineer",
-    "React",
+    "Software Engineer",
+    "Full Stack Developer", // Crucial for SEO now
+    "System Architecture",
     "Next.js",
+    "React",
     "TypeScript",
-    "UI Development",
+    "Node.js",
     "Web Performance",
     "Motion Design",
     "Ondassyn Abdrakhmanov",
@@ -46,25 +49,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: BASE_URL,
-    title: "Ondassyn Abdrakhmanov — Frontend Engineer",
+    title: "Ondassyn Abdrakhmanov — Senior Software Engineer",
     description:
-      "Turning complex problems into elegant, high-performance interfaces.",
+      "Bridging the gap between complex system architecture and elegant user experiences.",
     siteName: "Ondassyn Abdrakhmanov",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Ondassyn Abdrakhmanov — Frontend Engineer",
+        alt: "Ondassyn Abdrakhmanov — Senior Software Engineer",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Ondassyn Abdrakhmanov — Frontend Engineer",
+    title: "Ondassyn Abdrakhmanov — Senior Software Engineer",
     description:
-      "Turning complex problems into elegant, high-performance interfaces.",
+      "Software Engineer & MSc CS. Specialized in scalable architectures and interactive web experiences.",
     images: ["/opengraph-image"],
   },
 
